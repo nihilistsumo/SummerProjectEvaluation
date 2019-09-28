@@ -1,5 +1,6 @@
 import json, sys, argparse
 import numpy as np
+from scipy.stats import ttest_rel
 
 def get_parapair_score(parapair_scores, pair):
     if pair in parapair_scores.keys():
@@ -50,20 +51,35 @@ def main():
     args = vars(parser.parse_args())
     parapair_score_files = args['parapair_scores']
     triple_file = args['page_triples']
+    with open(triple_file, 'r') as trp:
+        triples = json.load(trp)
+    pages = list(triples.keys())
+    method_list = []
     print("Method\t\tTriplet accuracy")
+    page_acc_mat = []
     for parapair_score_file in parapair_score_files:
         with open(parapair_score_file, 'r') as ps:
             parapair_scores = json.load(ps)
-        with open(triple_file, 'r') as trp:
-            triples = json.load(trp)
         pagewise_acc = get_accuracy_triples(parapair_scores, triples)
         method = parapair_score_file.split('/')[len(parapair_score_file.split('/')) - 1]
-
+        method_list.append(method)
+        pagewise_acc_row = [pagewise_acc[p]['acc'] for p in pages]
+        page_acc_mat.append(pagewise_acc_row)
         # for p in pagewise_acc.keys():
             # print(p+' hit: '+str(pagewise_acc[p]['hit'])+', num: '+str(pagewise_acc[p]['num'])+', missing: '+
                   # str(pagewise_acc[p]['missing_score'])+', acc: '+str(pagewise_acc[p]['acc']))
-        mean_acc = np.mean([pagewise_acc[p]['acc'] for p in pagewise_acc.keys()])
+
+        mean_acc = np.mean([pagewise_acc[p]['acc'] for p in pages])
         print(method+"\t\t%.4f" % mean_acc)
+    page_acc_mat = np.array(page_acc_mat)
+    np.transpose(page_acc_mat)
+    print("\nMethod1\t\tMethod2\t\tttest value\t\tp value")
+    for i in range(len(method_list) - 1):
+        for j in range(i + 1, len(method_list)):
+            samples_a = page_acc_mat[:, i]
+            samples_b = page_acc_mat[:, j]
+            t_test = ttest_rel(samples_a, samples_b)
+            print(method_list[i] + '\t\t' + method_list[j] + '\t\t%.4f\t\t%.4f' % (t_test[0], t_test[1]))
 
 if __name__ == '__main__':
     main()

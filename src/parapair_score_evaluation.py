@@ -67,24 +67,30 @@ def main():
     parser = argparse.ArgumentParser(description="Calculate basic accuracy measures of a parapair score file")
     parser.add_argument("-pp", "--parapair_file", required=True, help="Path to parapair file")
     parser.add_argument("-pps", "--parapair_score_files", required=True, nargs='+', help="Paths to parapair score files as list")
+    parser.add_argument("-m", "--method_names", nargs='+', help="List of method names in the same order of pp score files")
     parser.add_argument("-n", "--normalization", help="Type of normalization to be used (minmax / zscore / no)")
     parser.add_argument("-t", "--plot_title", help="Title to show in ROC curve plot")
     args = vars(parser.parse_args())
     parapair_file = args["parapair_file"]
     parapair_score_files = args["parapair_score_files"]
+    method_names = args["method_names"]
     norm = args["normalization"]
     title = args["plot_title"]
     with open(parapair_file, 'r') as pp:
         parapair = json.load(pp)
     print("Method\t\tAUC score")
     roc_data = []
-    for parapair_score_file in parapair_score_files:
+    for i in range(len(parapair_score_files)):
+        parapair_score_file = parapair_score_files[i]
         with open(parapair_score_file, 'r') as pps:
             parapair_score = json.load(pps)
         parapair_score_dict = normalize_parapair_scores(parapair_score, norm)
         true_parapair_dict = read_true_parapair_dict(parapair)
         fpr, tpr, auc_score = calculate_auc(true_parapair_dict, parapair_score_dict)
-        method = parapair_score_file.split("/")[len(parapair_score_file.split("/")) - 1][:-5]
+        if method_names is None:
+            method = parapair_score_file.split("/")[len(parapair_score_file.split("/")) - 1][:-5]
+        else:
+            method = method_names[i]
         roc_data.append((fpr, tpr, auc_score, method))
         #print("\nAUC: "+str(calculate_auc(true_parapair_dict, parapair_score_dict)))
         print(method+"\t\t%.4f" %auc_score)

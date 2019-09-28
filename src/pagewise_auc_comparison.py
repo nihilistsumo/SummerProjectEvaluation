@@ -3,85 +3,77 @@ import tensorflow as tf
 import json, os, argparse, copy, statistics
 from scipy import stats
 from scipy.stats import pearsonr
+from scipy.stats import ttest_rel
 from collections import Counter
+import sklearn.metrics as metrics
 from sklearn.metrics import roc_auc_score
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import random
 import parapair_score_evaluation
 
+def calculate_auc(true_parapair_dict, parapair_score_dict, page, parapair_data):
+    ytrue = []
+    yhat = []
+    pairs = parapair_data[page]['parapairs']
+    for pp in pairs:
+        ytrue.append(true_parapair_dict[pp])
+        yhat.append(parapair_score_dict[pp])
+    fpr, tpr, threshold_d = metrics.roc_curve(ytrue, yhat)
+    return fpr, tpr, roc_auc_score(ytrue, yhat)
 
-def draw_corr_heatmap(method_list, corr_matrix):
-    fig, ax = plt.subplots()
-    im = ax.imshow(corr_matrix)
-
-    # We want to show all ticks...
-    ax.set_xticks(np.arange(len(method_list)))
-    ax.set_yticks(np.arange(len(method_list)))
-    # ... and label them with the respective list entries
-    ax.set_xticklabels(list(range(1, len(method_list)+1)))
-    ax.set_yticklabels(list(range(1, len(method_list)+1)))
-
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
-
-    ax.set_title("Pearsons correlation matrix")
-    fig.tight_layout()
-    plt.show()
-
-def draw_corr_sb_hm(method_list, corr_matrix):
-    df = pd.DataFrame(corr_matrix, index=list(range(1, len(method_list)+1)), columns=list(range(1, len(method_list)+1)))
-    ax = sns.heatmap(df)
-    ax.set_title("Pearsons correlation matrix")
-    plt.show()
-
-def calculate_pp_score_correlation(parapair_score_dicts):
-    methods = list(parapair_score_dicts.keys())
-    methods.sort()
-    cor_matrix = []
-    print('Following is the method list:')
-    for i in range(len(methods)):
-        print(str(i+1)+'. '+methods[i])
-    print('Pearsons correlation matrix')
-    for i in range(len(methods)):
-        print('\t'+str(i+1), end='')
+def calculate_sig_test(roc_dat):
+    pages = list(roc_dat[random.sample(list(roc_dat.keys()), 1)[0]].keys())
+    methods = list(roc_dat.keys())
+    roc_mat = []
+    for m in methods:
+        print('\t'+m, end='')
     print('\n')
-    for i in range(len(methods)):
-        print(str(i+1)+'\t', end='')
-        corr = []
-        for j in range(len(methods)):
-            m1 = methods[i]
-            m2 = methods[j]
-            score_dict1 = parapair_score_dicts[m1]
-            score_dict2 = parapair_score_dicts[m2]
-            x = []
-            y = []
-            for p in score_dict1.keys():
-                x.append(score_dict1[p])
-                y.append(score_dict2[p])
-            pearson_cor, _ = pearsonr(x, y)
-            print('%.4f\t' % pearson_cor, end='')
-            corr.append(pearson_cor)
+    for page in pages:
+        print(page, end='')
+        roc_mat_row = []
+        for m in methods:
+            print('\t%.4f' % roc_dat[m][page][2], end='')
+            roc_mat_row.append(roc_dat[m][page][2])
+        roc_mat.append(roc_mat_row)
         print('\n')
-        cor_matrix.append(corr)
-    return methods, cor_matrix
+    roc_mat = np.array(roc_mat)
+    print("\nMethod1\t\tMethod2\t\tttest value\t\tp value")
+    for i in range(len(methods) - 1):
+        for j in range(i+1, len(methods)):
+            samples_a = roc_mat[:, i]
+            samples_b = roc_mat[:, j]
+            t_test = ttest_rel(samples_a, samples_b)
+            print(methods[i]+'\t\t'+methods[j]+'\t\t%.4f\t\t%.4f' % (t_test[0], t_test[1]))
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Calculate correlations between parapair score files")
+    parser = argparse.ArgumentParser(description="Compare pagewise AUC scores")
+    parser.add_argument("-pp", "--parapair_file", required=True, help="Path to parapair file")
     parser.add_argument("-pps", "--parapair_score_files", required=True, nargs='+', help="Paths to parapair score files as list")
     parser.add_argument("-n", "--normalization", help="Type of normalization to be used (minmax / zscore / no)")
     args = vars(parser.parse_args())
+    parapair_file = args["parapair_file"]
     parapair_score_files = args["parapair_score_files"]
     norm = args["normalization"]
-
-    parapair_score_dicts = dict()
+    with open(parapair_file, 'r') as pp:
+        parapair = json.load(pp)
+    roc_data = dict()
+    true_parapair_dict = parapair_score_evaluation.read_true_parapair_dict(parapair)
     for parapair_score_file in parapair_score_files:
         with open(parapair_score_file, 'r') as pps:
             parapair_score = json.load(pps)
-        method = parapair_score_file.split('/')[len(parapair_score_file.split('/')) - 1]
-        parapair_score_dicts[method] = parapair_score_evaluation.normalize_parapair_scores(parapair_score, norm)
-    m, mat = calculate_pp_score_correlation(parapair_score_dicts)
-    draw_corr_sb_hm(m, mat)
+        parapair_score_dict = parapair_score_evaluation.normalize_parapair_scores(parapair_score, norm)
+        roc_data_method = dict()
+        for page in parapair.keys():
+            if len(parapair[page]['parapairs']) > 0:
+                fpr, tpr, auc_score = calculate_auc(true_parapair_dict, parapair_score_dict, page, parapair)
+                roc_data_method[page] = (fpr, tpr, auc_score)
+        method = parapair_score_file.split("/")[len(parapair_score_file.split("/")) - 1][:-5]
+        roc_data[method] = roc_data_method
+    calculate_sig_test(roc_data)
+
 
 if __name__ == '__main__':
     main()

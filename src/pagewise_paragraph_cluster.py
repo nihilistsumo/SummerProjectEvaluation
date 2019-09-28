@@ -8,8 +8,9 @@ from sklearn.metrics import roc_auc_score
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.cluster import OPTICS, DBSCAN, AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import adjusted_rand_score
+from scipy.stats import ttest_rel
 import combine_parapair_scores
 
 
@@ -82,7 +83,7 @@ def pagewise_cluster(parapair_dict, norm_pair_dist, num_c=5, link='average'):
         # cl = OPTICS(min_samples=4, metric='precomputed')
         # cl = DBSCAN(eps=0.001, min_samples=2, metric='precomputed')
         cl_labels = cl.fit_predict(dist_mat)
-        print(page + ": Max label " + str(max(cl_labels)))
+        # print(page + ": Max label " + str(max(cl_labels)))
         for i in range(len(paras)):
             para_labels[paras[i]] = cl_labels[i]
         page_para_labels[page] = para_labels
@@ -93,28 +94,47 @@ def main():
     parser = argparse.ArgumentParser(description='Cluster pagewise paras based on parapair score file')
     parser.add_argument('-pp', '--parapair', help='Path to para pair file')
     parser.add_argument('-hq', '--hier_qrels', help='Path to hierarchical qrels file')
-    parser.add_argument('-pps', '--parapair_scores', help='Path to parapair score file')
+    parser.add_argument('-pps', '--parapair_scores', nargs='+', help='Path to parapair score files')
     parser.add_argument('-n', '--num_cluster', type=int, help='Number of clusters for each article')
     parser.add_argument('-l', '--linkage', help='Type of linkage (complete/average/single)')
     args = vars(parser.parse_args())
     parapair_file = args['parapair']
     hq_file = args['hier_qrels']
-    pp_score_file = args['parapair_scores']
+    pp_score_files = args['parapair_scores']
     with open(parapair_file, 'r') as pp:
         parapair = json.load(pp)
-    with open(pp_score_file, 'r') as pps:
-        parapair_score = json.load(pps)
-    num_cluster = args['num_cluster']
-    link = args['linkage']
-    true_page_para_labels = convert_qrels_to_labels(hq_file)
-    combine_parapair_scores.minmax_normalize_ppscore_dict(parapair_score)
-    page_para_labels = pagewise_cluster(parapair, parapair_score, num_cluster, link)
-    pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels)
-    for p in pagewise_ari.keys():
-        print(p + '\t\t%.4f' % pagewise_ari[p])
-    print("Mean ARI: %.4f, stderr: %.4f" % (np.mean(list(pagewise_ari.values())),
-                                            np.std(list(pagewise_ari.values())) / np.sqrt(
-                                                len(list(pagewise_ari.values())))))
+    pagewise_ari_mat = []
+    methods = []
+    pages = []
+    print("Method\tMean_ARI\tstderr")
+    for pp_score_file in pp_score_files:
+        method = pp_score_file.split('/')[len(pp_score_file.split('/')) - 1][:-5]
+        methods.append(method)
+        with open(pp_score_file, 'r') as pps:
+            parapair_score = json.load(pps)
+        num_cluster = args['num_cluster']
+        link = args['linkage']
+        true_page_para_labels = convert_qrels_to_labels(hq_file)
+        combine_parapair_scores.minmax_normalize_ppscore_dict(parapair_score)
+        page_para_labels = pagewise_cluster(parapair, parapair_score, num_cluster, link)
+        pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels)
+        if len(pages) == 0:
+            pages = list(pagewise_ari.keys())
+        pagewise_ari_mat.append([pagewise_ari[p] for p in pages])
+        # for p in pagewise_ari.keys():
+            # print(p + '\t\t%.4f' % pagewise_ari[p])
+        print(method+"\t%.4f\t%.4f" % (np.mean(list(pagewise_ari.values())),
+                                                np.std(list(pagewise_ari.values())) / np.sqrt(
+                                                    len(list(pagewise_ari.values())))))
+    pagewise_ari_mat = np.array(pagewise_ari_mat)
+    np.transpose(pagewise_ari_mat)
+    print("\nMethod1\t\tMethod2\t\tttest value\t\tp value")
+    for i in range(len(methods) - 1):
+        for j in range(i + 1, len(methods)):
+            samples_a = pagewise_ari_mat[:, i]
+            samples_b = pagewise_ari_mat[:, j]
+            t_test = ttest_rel(samples_a, samples_b)
+            print(methods[i] + '\t\t' + methods[j] + '\t\t%.4f\t\t%.4f' % (t_test[0], t_test[1]))
 
 
 if __name__ == '__main__':
