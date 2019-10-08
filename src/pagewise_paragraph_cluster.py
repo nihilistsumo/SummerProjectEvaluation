@@ -103,9 +103,13 @@ def main():
     pp_score_files = args['parapair_scores']
     with open(parapair_file, 'r') as pp:
         parapair = json.load(pp)
-    pagewise_ari_mat = []
     methods = []
+    true_page_para_labels = convert_qrels_to_labels(hq_file)
     pages = []
+    for page in parapair.keys():
+        if len(parapair[page]['parapairs']) > 0:
+            pages.append(page)
+    pages.sort()
     print("Method\tMean_ARI\tstderr")
     for pp_score_file in pp_score_files:
         method = pp_score_file.split('/')[len(pp_score_file.split('/')) - 1][:-5]
@@ -114,28 +118,16 @@ def main():
             parapair_score = json.load(pps)
         num_cluster = args['num_cluster']
         link = args['linkage']
-        true_page_para_labels = convert_qrels_to_labels(hq_file)
+
         combine_parapair_scores.minmax_normalize_ppscore_dict(parapair_score)
         page_para_labels = pagewise_cluster(parapair, parapair_score, num_cluster, link)
         pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels)
-        if len(pages) == 0:
-            pages = list(pagewise_ari.keys())
-        pagewise_ari_mat.append([pagewise_ari[p] for p in pages])
+
         # for p in pagewise_ari.keys():
             # print(p + '\t\t%.4f' % pagewise_ari[p])
         print(method+"\t%.4f\t%.4f" % (np.mean(list(pagewise_ari.values())),
                                                 np.std(list(pagewise_ari.values())) / np.sqrt(
                                                     len(list(pagewise_ari.values())))))
-    pagewise_ari_mat = np.array(pagewise_ari_mat)
-    np.transpose(pagewise_ari_mat)
-    print("\nMethod1\t\tMethod2\t\tttest value\t\tp value")
-    for i in range(len(methods) - 1):
-        for j in range(i + 1, len(methods)):
-            samples_a = pagewise_ari_mat[:, i]
-            samples_b = pagewise_ari_mat[:, j]
-            t_test = ttest_rel(samples_a, samples_b)
-            print(methods[i] + '\t\t' + methods[j] + '\t\t%.4f\t\t%.4f' % (t_test[0], t_test[1]))
-
 
 if __name__ == '__main__':
     main()

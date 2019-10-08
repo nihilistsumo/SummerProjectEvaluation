@@ -51,9 +51,11 @@ def main():
     args = vars(parser.parse_args())
     parapair_score_files = args['parapair_scores']
     triple_file = args['page_triples']
+    parapair_score_files.sort()
     with open(triple_file, 'r') as trp:
         triples = json.load(trp)
     pages = list(triples.keys())
+    pages.sort()
     method_list = []
     print("Method\t\tTriplet accuracy")
     page_acc_mat = []
@@ -63,7 +65,8 @@ def main():
         pagewise_acc = get_accuracy_triples(parapair_scores, triples)
         method = parapair_score_file.split('/')[len(parapair_score_file.split('/')) - 1]
         method_list.append(method)
-        pagewise_acc_row = [pagewise_acc[p]['acc'] for p in pages]
+        pagewise_acc_row = [pagewise_acc[pages[p]]['acc'] for p in range(len(pages))]
+
         page_acc_mat.append(pagewise_acc_row)
         # for p in pagewise_acc.keys():
             # print(p+' hit: '+str(pagewise_acc[p]['hit'])+', num: '+str(pagewise_acc[p]['num'])+', missing: '+
