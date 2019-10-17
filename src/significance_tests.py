@@ -14,6 +14,8 @@ from scipy.stats import ttest_rel
 from pagewise_paragraph_cluster import convert_qrels_to_labels, pagewise_cluster
 from combine_parapair_scores import minmax_normalize_ppscore_dict
 from eval_pagewise_triple_ppscore import get_accuracy_triples
+from parapair_score_evaluation import normalize_parapair_scores, read_true_parapair_dict
+from pagewise_auc_comparison import calculate_auc
 
 def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels, pagelist):
     ari_score_list = []
@@ -68,7 +70,6 @@ def triple_sigtest(parapair_file, anchor_file, pp_score_file, triple_file):
         parapair = json.load(pp)
     with open(triple_file, 'r') as trp:
         triples = json.load(trp)
-    pages = list(triples.keys())
     anchor_method = anchor_file.split('/')[len(anchor_file.split('/')) - 1][:-5]
     with open(anchor_file, 'r') as a:
         anchor_scores = json.load(a)
@@ -88,6 +89,32 @@ def triple_sigtest(parapair_file, anchor_file, pp_score_file, triple_file):
         other_acc.append(other_acc_dict[p]['acc'])
     sigtest(anchor_acc, other_acc, anchor_method, method)
 
+def auc_sigtest(parapair_file, anchor_file, pp_score_file):
+    with open(parapair_file, 'r') as pp:
+        parapair = json.load(pp)
+    anchor_method = anchor_file.split('/')[len(anchor_file.split('/')) - 1][:-5]
+    with open(anchor_file, 'r') as a:
+        anchor_scores = json.load(a)
+    anchor_score_dict = normalize_parapair_scores(anchor_scores, 'minmax')
+    method = pp_score_file.split('/')[len(pp_score_file.split('/')) - 1][:-5]
+    with open(pp_score_file, 'r') as p:
+        parapair_scores = json.load(p)
+    parapair_score_dict = normalize_parapair_scores(parapair_scores, 'minmax')
+    true_parapair_dict = read_true_parapair_dict(parapair)
+    pages = []
+    for page in parapair.keys():
+        if len(parapair[page]['parapairs']) > 0:
+            pages.append(page)
+    anchor_auc = []
+    other_auc = []
+    for page in pages:
+        _, _, auc_score_a = calculate_auc(true_parapair_dict, anchor_score_dict, page, parapair)
+        anchor_auc.append(auc_score_a)
+        _, _, auc_score_b = calculate_auc(true_parapair_dict, parapair_score_dict, page, parapair)
+        other_auc.append(auc_score_b)
+    sigtest(anchor_auc, other_auc, anchor_method, method)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Cluster pagewise paras based on parapair score file')
     parser.add_argument('-pp', '--parapair', help='Path to para pair file')
@@ -104,10 +131,14 @@ def main():
     pp_score_file = args['parapair_scores']
     num_cluster = args['num_cluster']
     link = args['linkage']
-    #cluster_sigtest(parapair_file, anchor_file, pp_score_file, hq_file, num_cluster, link)
-
     triple_file = args['triples']
+
+    print("Significance test on AUC\n========================")
+    auc_sigtest(parapair_file, anchor_file, pp_score_file)
+    print("Significance test on Triples\n============================")
     triple_sigtest(parapair_file, anchor_file, pp_score_file, triple_file)
+    print("Significance test on Clustering\n===============================")
+    cluster_sigtest(parapair_file, anchor_file, pp_score_file, hq_file, num_cluster, link)
 
 if __name__ == '__main__':
     main()

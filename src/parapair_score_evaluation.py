@@ -32,10 +32,19 @@ def normalize_parapair_scores(parapair_scores, norm_method='minmax'):
         parapair_score_dict = normalize_parapair_scores(parapair_score_dict, 'minmax')
     return parapair_score_dict
 
-def calculate_auc(true_parapair_dict, parapair_score_dict):
+# def calculate_auc(true_parapair_dict, parapair_score_dict):
+#     ytrue = []
+#     yhat = []
+#     for pp in true_parapair_dict.keys():
+#         ytrue.append(true_parapair_dict[pp])
+#         yhat.append(parapair_score_dict[pp])
+#     fpr, tpr, threshold_d = metrics.roc_curve(ytrue, yhat)
+#     return fpr, tpr, roc_auc_score(ytrue, yhat)
+def calculate_auc(true_parapair_dict, parapair_score_dict, page, parapair_data):
     ytrue = []
     yhat = []
-    for pp in true_parapair_dict.keys():
+    pairs = parapair_data[page]['parapairs']
+    for pp in pairs:
         ytrue.append(true_parapair_dict[pp])
         yhat.append(parapair_score_dict[pp])
     fpr, tpr, threshold_d = metrics.roc_curve(ytrue, yhat)
@@ -78,6 +87,10 @@ def main():
     title = args["plot_title"]
     with open(parapair_file, 'r') as pp:
         parapair = json.load(pp)
+    pages = []
+    for page in parapair.keys():
+        if len(parapair[page]['parapairs']) > 0:
+            pages.append(page)
     print("Method\t\tAUC score")
     roc_data = []
     for i in range(len(parapair_score_files)):
@@ -86,15 +99,20 @@ def main():
             parapair_score = json.load(pps)
         parapair_score_dict = normalize_parapair_scores(parapair_score, norm)
         true_parapair_dict = read_true_parapair_dict(parapair)
-        fpr, tpr, auc_score = calculate_auc(true_parapair_dict, parapair_score_dict)
+        auc_list = []
+        for page in pages:
+            _,_,a = calculate_auc(true_parapair_dict, parapair_score_dict, page, parapair)
+            auc_list.append(a)
+        #fpr, tpr, auc_score = calculate_auc(true_parapair_dict, parapair_score_dict)
+        auc_score = np.mean(auc_list)
         if method_names is None:
             method = parapair_score_file.split("/")[len(parapair_score_file.split("/")) - 1][:-5]
         else:
             method = method_names[i]
-        roc_data.append((fpr, tpr, auc_score, method))
+        #roc_data.append((fpr, tpr, auc_score, method))
         #print("\nAUC: "+str(calculate_auc(true_parapair_dict, parapair_score_dict)))
         print(method+"\t\t%.4f" %auc_score)
-    draw_roc(roc_data, colors_list, title)
+    #draw_roc(roc_data, colors_list, title)
 
 if __name__ == '__main__':
     main()
