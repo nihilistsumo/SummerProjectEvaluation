@@ -6,6 +6,7 @@ from collections import Counter
 import sklearn.metrics as metrics
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import normalize, StandardScaler
+from scipy import stats
 from scipy.stats import pearsonr, PearsonRConstantInputWarning
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -88,7 +89,7 @@ def main():
     for page in parapair.keys():
         if len(parapair[page]['parapairs']) > 0:
             pages.append(page)
-    print("Method\t\teval score")
+    print("Method\t\teval score\t\tstderr")
     nan_pages = set()
     for i in range(len(parapair_score_files)):
         parapair_score_file = parapair_score_files[i]
@@ -109,13 +110,14 @@ def main():
                     score_list.append(m)
         #fpr, tpr, auc_score = calculate_auc(true_parapair_dict, parapair_score_dict)
         score = np.mean(score_list)
+        stderr = stats.sem(score_list)
         if method_names is None:
             method = parapair_score_file.split("/")[len(parapair_score_file.split("/")) - 1][:-5]
         else:
             method = method_names[i]
         #roc_data.append((fpr, tpr, auc_score, method))
         #print("\nAUC: "+str(calculate_auc(true_parapair_dict, parapair_score_dict)))
-        print(method+"\t\t%.4f" %score)
+        print(method+"\t\t%.4f\t\t%.4f" %(score, stderr))
     if len(nan_pages) > 0:
         print("Following pages caused pearsonr to return nan, most probably this means, for the following pages"
               "we have constant label for all parapairs. Hence this page is excluded from mean pearsonr calculation")
