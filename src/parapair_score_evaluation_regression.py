@@ -93,6 +93,7 @@ def main():
         for page in pages:
             if metric == 'mse':
                 m = calculate_mse(true_parapair_dict, parapair_score_dict, page, parapair)
+                score_list.append(m)
             elif metric == 'pear':
                 m = calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair)
                 if math.isnan(m):
