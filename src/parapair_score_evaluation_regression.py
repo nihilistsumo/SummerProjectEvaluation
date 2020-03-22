@@ -5,6 +5,7 @@ from scipy import stats
 from collections import Counter
 import sklearn.metrics as metrics
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import normalize
 from scipy.stats import pearsonr, PearsonRConstantInputWarning
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -59,6 +60,10 @@ def calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair_d
     for pp in pairs:
         ytrue.append(true_parapair_dict[pp])
         yhat.append(parapair_score_dict[pp])
+    ytrue = np.array(ytrue)
+    yhat = np.array(yhat)
+    ytrue = normalize(ytrue)
+    yhat = normalize(yhat)
     ps = pearsonr(ytrue, yhat)[0]
     return ps
 
