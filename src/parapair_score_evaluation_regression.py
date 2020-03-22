@@ -1,13 +1,14 @@
 import numpy as np
 import tensorflow as tf
-import json, os, argparse, copy, statistics, random
+import json, os, argparse, copy, statistics, random, math
 from scipy import stats
 from collections import Counter
 import sklearn.metrics as metrics
 from sklearn.metrics import mean_squared_error
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, PearsonRConstantInputWarning
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
+import warnings
 
 def read_true_parapair_dict(parapair_dict):
     true_parapair_dict = dict()
@@ -59,6 +60,10 @@ def calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair_d
         ytrue.append(true_parapair_dict[pp])
         yhat.append(parapair_score_dict[pp])
     ps = pearsonr(ytrue, yhat)[0]
+    if math.isnan(ps):
+        print(page)
+        print('ytrue: '+str(ytrue))
+        print('yhatP: '+str(yhat))
     return ps
 
 def main():
