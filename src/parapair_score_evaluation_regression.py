@@ -60,10 +60,6 @@ def calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair_d
         ytrue.append(true_parapair_dict[pp])
         yhat.append(parapair_score_dict[pp])
     ps = pearsonr(ytrue, yhat)[0]
-    if math.isnan(ps):
-        print(page)
-        print('ytrue: '+str(ytrue))
-        print('yhatP: '+str(yhat))
     return ps
 
 def main():
@@ -86,6 +82,7 @@ def main():
         if len(parapair[page]['parapairs']) > 0:
             pages.append(page)
     print("Method\t\teval score")
+    nan_pages = set()
     for i in range(len(parapair_score_files)):
         parapair_score_file = parapair_score_files[i]
         with open(parapair_score_file, 'r') as pps:
@@ -98,7 +95,10 @@ def main():
                 m = calculate_mse(true_parapair_dict, parapair_score_dict, page, parapair)
             elif metric == 'pear':
                 m = calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair)
-            score_list.append(m)
+                if math.isnan(m):
+                    nan_pages.add(page)
+                else:
+                    score_list.append(m)
         #fpr, tpr, auc_score = calculate_auc(true_parapair_dict, parapair_score_dict)
         score = np.mean(score_list)
         if method_names is None:
@@ -108,6 +108,11 @@ def main():
         #roc_data.append((fpr, tpr, auc_score, method))
         #print("\nAUC: "+str(calculate_auc(true_parapair_dict, parapair_score_dict)))
         print(method+"\t\t%.4f" %score)
+    if len(nan_pages) > 0:
+        print("Following pages caused pearsonr to return nan, most probably this means, for the following pages"
+              "we have constant label for all parapairs. Hence this page is excluded from mean pearsonr calculation")
+        for page in nan_pages:
+            print(page)
     #draw_roc(roc_data, colors_list, title)
 
 if __name__ == '__main__':
