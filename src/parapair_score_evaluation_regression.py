@@ -69,6 +69,7 @@ def calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair_d
     return ps
 
 def main():
+    warnings.filterwarnings('ignore')
     parser = argparse.ArgumentParser(description="Calculate regression performance measures of parapair score files")
     parser.add_argument("-pp", "--parapair_file", required=True, help="Path to parapair file")
     parser.add_argument("-pps", "--parapair_score_files", required=True, nargs='+', help="Paths to parapair score files as list")
