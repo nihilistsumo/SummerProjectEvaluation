@@ -5,6 +5,7 @@ from scipy import stats
 from collections import Counter
 import sklearn.metrics as metrics
 from sklearn.metrics import mean_squared_error
+from scipy.stats import pearsonr
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 
@@ -50,6 +51,15 @@ def calculate_mse(true_parapair_dict, parapair_score_dict, page, parapair_data):
     mse = mean_squared_error(ytrue, yhat)
     return mse
 
+def calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair_data):
+    ytrue = []
+    yhat = []
+    pairs = parapair_data[page]['parapairs']
+    for pp in pairs:
+        ytrue.append(true_parapair_dict[pp])
+        yhat.append(parapair_score_dict[pp])
+    ps = pearsonr(ytrue, yhat)[0]
+    return ps
 
 def main():
     parser = argparse.ArgumentParser(description="Calculate regression performance measures of parapair score files")
@@ -57,37 +67,42 @@ def main():
     parser.add_argument("-pps", "--parapair_score_files", required=True, nargs='+', help="Paths to parapair score files as list")
     parser.add_argument("-m", "--method_names", nargs='+', help="List of method names in the same order of pp score files")
     parser.add_argument("-n", "--normalization", help="Type of normalization to be used (minmax / zscore / no)")
+    parser.add_argument("-me", "--metric", help="Metric to be used to measure regression performance (mse / pear)")
     args = vars(parser.parse_args())
     parapair_file = args["parapair_file"]
     parapair_score_files = args["parapair_score_files"]
     method_names = args["method_names"]
     norm = args["normalization"]
+    metric = args["metric"]
     with open(parapair_file, 'r') as pp:
         parapair = json.load(pp)
     pages = []
     for page in parapair.keys():
         if len(parapair[page]['parapairs']) > 0:
             pages.append(page)
-    print("Method\t\tMSE score")
+    print("Method\t\teval score")
     for i in range(len(parapair_score_files)):
         parapair_score_file = parapair_score_files[i]
         with open(parapair_score_file, 'r') as pps:
             parapair_score = json.load(pps)
         parapair_score_dict = normalize_parapair_scores(parapair_score, norm)
         true_parapair_dict = read_true_parapair_dict(parapair)
-        mse_list = []
+        score_list = []
         for page in pages:
-            m = calculate_mse(true_parapair_dict, parapair_score_dict, page, parapair)
-            mse_list.append(m)
+            if metric == 'mse':
+                m = calculate_mse(true_parapair_dict, parapair_score_dict, page, parapair)
+            elif metric == 'pear':
+                m = calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair)
+            score_list.append(m)
         #fpr, tpr, auc_score = calculate_auc(true_parapair_dict, parapair_score_dict)
-        mse_score = np.mean(mse_list)
+        score = np.mean(score_list)
         if method_names is None:
             method = parapair_score_file.split("/")[len(parapair_score_file.split("/")) - 1][:-5]
         else:
             method = method_names[i]
         #roc_data.append((fpr, tpr, auc_score, method))
         #print("\nAUC: "+str(calculate_auc(true_parapair_dict, parapair_score_dict)))
-        print(method+"\t\t%.4f" %mse_score)
+        print(method+"\t\t%.4f" %score)
     #draw_roc(roc_data, colors_list, title)
 
 if __name__ == '__main__':
