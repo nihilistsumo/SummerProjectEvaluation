@@ -5,7 +5,7 @@ from scipy import stats
 from collections import Counter
 import sklearn.metrics as metrics
 from sklearn.metrics import mean_squared_error
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize, StandardScaler
 from scipy.stats import pearsonr, PearsonRConstantInputWarning
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -56,14 +56,15 @@ def calculate_mse(true_parapair_dict, parapair_score_dict, page, parapair_data):
 def calculate_pearsonr(true_parapair_dict, parapair_score_dict, page, parapair_data):
     ytrue = []
     yhat = []
+    scaler = StandardScaler()
     pairs = parapair_data[page]['parapairs']
     for pp in pairs:
         ytrue.append(true_parapair_dict[pp])
         yhat.append(parapair_score_dict[pp])
     ytrue = np.array(ytrue)
     yhat = np.array(yhat)
-    ytrue = normalize(ytrue)
-    yhat = normalize(yhat)
+    ytrue = scaler.fit_transform(ytrue.reshape(-1, 1)).flatten()
+    yhat = scaler.fit_transform(yhat.reshape(-1, 1)).flatten()
     ps = pearsonr(ytrue, yhat)[0]
     return ps
 
