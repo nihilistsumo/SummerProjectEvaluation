@@ -91,7 +91,7 @@ def main():
     for page in parapair.keys():
         if len(parapair[page]['parapairs']) > 0:
             pages.append(page)
-    print("Method\t\tAUC score")
+    print("Method\t\tAUC score\t\tstderr")
     roc_data = []
     for i in range(len(parapair_score_files)):
         parapair_score_file = parapair_score_files[i]
@@ -105,13 +105,14 @@ def main():
             auc_list.append(a)
         #fpr, tpr, auc_score = calculate_auc(true_parapair_dict, parapair_score_dict)
         auc_score = np.mean(auc_list)
+        stderr = stats.sem(auc_list)
         if method_names is None:
             method = parapair_score_file.split("/")[len(parapair_score_file.split("/")) - 1][:-5]
         else:
             method = method_names[i]
         #roc_data.append((fpr, tpr, auc_score, method))
         #print("\nAUC: "+str(calculate_auc(true_parapair_dict, parapair_score_dict)))
-        print(method+"\t\t%.4f" %auc_score)
+        print(method+"\t\t%.4f\t\t%.4f" %(auc_score, stderr))
     #draw_roc(roc_data, colors_list, title)
 
 if __name__ == '__main__':
