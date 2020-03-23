@@ -44,7 +44,7 @@ def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels):
     return pagewise_ari_score
 
 
-def cluster_paras(paras, normalized_paired_dist):
+def cluster_paras(paras, normalized_paired_dist, splitter):
     dist_matrix = []
     for i in range(len(paras)):
         dist = []
@@ -53,15 +53,16 @@ def cluster_paras(paras, normalized_paired_dist):
                 dist.append(0.0)
             else:
                 if paras[i] + '_' + paras[j] in normalized_paired_dist.keys():
-                    dist.append(1 - normalized_paired_dist[paras[i] + '_' + paras[j]])
+                    dist.append(1 - normalized_paired_dist[paras[i] + splitter + paras[j]])
                 else:
-                    dist.append(1 - normalized_paired_dist[paras[j] + '_' + paras[i]])
+                    dist.append(1 - normalized_paired_dist[paras[j] + splitter + paras[i]])
         dist_matrix.append(dist)
     return np.array(dist_matrix)
 
 
 def pagewise_cluster(parapair_dict, norm_pair_dist, num_c=5, link='average'):
     page_para_labels = dict()
+    splitter = '_'
     for page in parapair_dict.keys():
         parapairs = parapair_dict[page]['parapairs']
         if len(parapairs) < 1:
@@ -73,6 +74,7 @@ def pagewise_cluster(parapair_dict, norm_pair_dist, num_c=5, link='average'):
             if '#' in pp:
                 p1 = pp.split('#')[0]
                 p2 = pp.split('#')[1]
+                splitter = '#'
             else:
                 p1 = pp.split('_')[0]
                 p2 = pp.split('_')[1]
@@ -80,7 +82,7 @@ def pagewise_cluster(parapair_dict, norm_pair_dist, num_c=5, link='average'):
                 paras.append(p1)
             if p2 not in paras:
                 paras.append(p2)
-        dist_mat = cluster_paras(paras, norm_pair_dist)
+        dist_mat = cluster_paras(paras, norm_pair_dist, splitter)
         if len(dist_mat) == 0:
             print("See")
         cl = AgglomerativeClustering(n_clusters=num_c, affinity='precomputed', linkage=link)
@@ -91,7 +93,7 @@ def pagewise_cluster(parapair_dict, norm_pair_dist, num_c=5, link='average'):
         for i in range(len(paras)):
             para_labels[paras[i]] = cl_labels[i]
         page_para_labels[page] = para_labels
-    return page_para_labels
+    return page_para_labels, splitter
 
 
 def main():
@@ -124,7 +126,7 @@ def main():
         link = args['linkage']
 
         combine_parapair_scores.minmax_normalize_ppscore_dict(parapair_score)
-        page_para_labels = pagewise_cluster(parapair, parapair_score, num_cluster, link)
+        page_para_labels, splitter = pagewise_cluster(parapair, parapair_score, num_cluster, link)
         pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels)
 
         # for p in pagewise_ari.keys():
