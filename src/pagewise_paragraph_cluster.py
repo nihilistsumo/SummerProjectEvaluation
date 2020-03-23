@@ -52,7 +52,7 @@ def cluster_paras(paras, normalized_paired_dist, splitter):
             if i == j:
                 dist.append(0.0)
             else:
-                if paras[i] + '_' + paras[j] in normalized_paired_dist.keys():
+                if paras[i] + splitter + paras[j] in normalized_paired_dist.keys():
                     dist.append(1 - normalized_paired_dist[paras[i] + splitter + paras[j]])
                 else:
                     dist.append(1 - normalized_paired_dist[paras[j] + splitter + paras[i]])
