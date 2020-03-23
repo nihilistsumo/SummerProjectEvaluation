@@ -70,8 +70,12 @@ def pagewise_cluster(parapair_dict, norm_pair_dist, num_c=5, link='average'):
         paras = []
         para_labels = dict()
         for pp in parapairs:
-            p1 = pp.split('_')[0]
-            p2 = pp.split('_')[1]
+            if '#' in pp:
+                p1 = pp.split('#')[0]
+                p2 = pp.split('#')[1]
+            else:
+                p1 = pp.split('_')[0]
+                p2 = pp.split('_')[1]
             if p1 not in paras:
                 paras.append(p1)
             if p2 not in paras:
