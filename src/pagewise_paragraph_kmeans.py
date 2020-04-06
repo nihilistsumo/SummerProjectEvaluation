@@ -111,7 +111,6 @@ def pagewise_kmeans(parapair_dict, para_emb_dict, num_c=5):
         parapairs = parapair_dict[page]['parapairs']
         if len(parapairs) < 1:
             continue
-        labels = parapair_dict[page]['labels']
         paras = []
         para_labels = dict()
         para_embs = []
@@ -143,17 +142,15 @@ def main():
     parser = argparse.ArgumentParser(description='Cluster pagewise paras based on parapair score file')
     parser.add_argument('-pp', '--parapair', help='Path to para pair file')
     parser.add_argument('-hq', '--hier_qrels', help='Path to hierarchical qrels file')
-    parser.add_argument('-pps', '--parapair_scores', nargs='+', help='Path to parapair score files')
     parser.add_argument('-n', '--num_cluster', type=int, help='Number of clusters for each article')
-    parser.add_argument('-l', '--linkage', help='Type of linkage (complete/average/single)')
+    parser.add_argument('-ei', '--emb_id', help='Path to emb paraid file')
+    parser.add_argument('-ev', '--emb_vecs', help='Path to emb vec file')
     args = vars(parser.parse_args())
     parapair_file = args['parapair']
     hq_file = args['hier_qrels']
-    pp_score_files = args['parapair_scores']
     num_cluster = args['num_cluster']
     with open(parapair_file, 'r') as pp:
         parapair = json.load(pp)
-    methods = []
     true_page_para_labels = convert_qrels_to_labels(hq_file)
     pages = []
     for page in parapair.keys():
@@ -161,23 +158,17 @@ def main():
             pages.append(page)
     pages.sort()
     print("Method\tMean_ARI\tstderr")
-    for pp_score_file in pp_score_files:
-        method = pp_score_file.split('/')[len(pp_score_file.split('/')) - 1][:-5]
-        methods.append(method)
-        with open(pp_score_file, 'r') as pps:
-            parapair_score = json.load(pps)
 
-        combine_parapair_scores.minmax_normalize_ppscore_dict(parapair_score)
-        link = args['linkage']
-        page_para_labels, splitter = pagewise_cluster(parapair, parapair_score, num_cluster, link)
+    para_emb_dict = get_para_emb_dict(args['emb_id'], args['emb_vecs'])
+    page_para_labels, splitter = pagewise_kmeans(parapair, para_emb_dict, num_cluster)
 
-        pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels)
+    pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels)
 
-        # for p in pagewise_ari.keys():
-            # print(p + '\t\t%.4f' % pagewise_ari[p])
-        print(method+"\t%.4f\t%.4f" % (np.mean(list(pagewise_ari.values())),
-                                                np.std(list(pagewise_ari.values())) / np.sqrt(
-                                                    len(list(pagewise_ari.values())))))
+    # for p in pagewise_ari.keys():
+    # print(p + '\t\t%.4f' % pagewise_ari[p])
+    print(args['emb_vecs']+"\t%.4f\t%.4f" % (np.mean(list(pagewise_ari.values())),
+                                   np.std(list(pagewise_ari.values())) / np.sqrt(
+                                       len(list(pagewise_ari.values())))))
 
 if __name__ == '__main__':
     main()
