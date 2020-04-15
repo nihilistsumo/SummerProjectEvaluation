@@ -33,7 +33,7 @@ def convert_qrels_to_labels(hier_qrels_file):
     return hq_qrels
 
 
-def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels):
+def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels, print_pagewise):
     pagewise_ari_score = dict()
     for page in cand_page_para_labels.keys():
         true_labels = []
@@ -41,7 +41,7 @@ def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels):
         for para in cand_page_para_labels[page].keys():
             true_labels.append(true_page_para_labels[page][para])
             cand_labels.append(cand_page_para_labels[page][para])
-            pagewise_ari_score[page] = adjusted_rand_score(true_labels, cand_labels)
+        pagewise_ari_score[page] = adjusted_rand_score(true_labels, cand_labels)
     return pagewise_ari_score
 
 
@@ -146,11 +146,13 @@ def main():
     parser.add_argument('-pps', '--parapair_scores', nargs='+', help='Path to parapair score files')
     parser.add_argument('-n', '--num_cluster', type=int, help='Number of clusters for each article')
     parser.add_argument('-l', '--linkage', help='Type of linkage (complete/average/single)')
+    parser.add_argument('-vi', '--pagewise', action='store_true', help='Print pagewise scores')
     args = vars(parser.parse_args())
     parapair_file = args['parapair']
     hq_file = args['hier_qrels']
     pp_score_files = args['parapair_scores']
     num_cluster = args['num_cluster']
+    print_pagewise = args['pagewise']
     with open(parapair_file, 'r') as pp:
         parapair = json.load(pp)
     methods = []
@@ -171,7 +173,7 @@ def main():
         link = args['linkage']
         page_para_labels, splitter = pagewise_cluster(parapair, parapair_score, num_cluster, link)
 
-        pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels)
+        pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels, print_pagewise)
 
         # for p in pagewise_ari.keys():
             # print(p + '\t\t%.4f' % pagewise_ari[p])
