@@ -57,10 +57,10 @@ def cluster_sigtest(parapair_file, anchor_file, pp_score_file, hq_file, num_clus
             pages.append(page)
 
     true_page_para_labels = convert_qrels_to_labels(hq_file)
-    page_para_labels_anchor = pagewise_cluster(parapair, anchor_scores, num_cluster, link)
+    page_para_labels_anchor, splitter = pagewise_cluster(parapair, anchor_scores, num_cluster, link)
     anchor_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels_anchor, pages)
 
-    page_para_labels = pagewise_cluster(parapair, parapair_scores, num_cluster, link)
+    page_para_labels, splitter = pagewise_cluster(parapair, parapair_scores, num_cluster, link)
     other_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels, pages)
 
     sigtest(anchor_ari, other_ari, anchor_method, method)
