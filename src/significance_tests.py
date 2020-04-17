@@ -39,6 +39,7 @@ def sigtest(anchor_ari_scores, scores, anchor_method, method):
     print("\nMethod1\t\tMethod2\t\tttest value\t\tp value")
     t_test = ttest_rel(anchor_ari_scores, scores)
     print(anchor_method + '\t\t' + method + '\t\t%.4f\t\t%.4f' % (t_test[0], t_test[1]))
+    return {'anchor': anchor_method, 'method': method, 'ttest': t_test[0], 'pval': t_test[1]}
 
 def cluster_sigtest(parapair_file, anchor_file, pp_score_file, hq_file, num_cluster, link):
     with open(parapair_file, 'r') as pp:
@@ -63,7 +64,7 @@ def cluster_sigtest(parapair_file, anchor_file, pp_score_file, hq_file, num_clus
     page_para_labels, splitter = pagewise_cluster(parapair, parapair_scores, num_cluster, link)
     other_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels, pages)
 
-    sigtest(anchor_ari, other_ari, anchor_method, method)
+    return sigtest(anchor_ari, other_ari, anchor_method, method)
 
 def triple_sigtest(parapair_file, anchor_file, pp_score_file, triple_file):
     with open(parapair_file, 'r') as pp:
@@ -87,7 +88,7 @@ def triple_sigtest(parapair_file, anchor_file, pp_score_file, triple_file):
     for p in pages:
         anchor_acc.append(anchor_acc_dict[p]['acc'])
         other_acc.append(other_acc_dict[p]['acc'])
-    sigtest(anchor_acc, other_acc, anchor_method, method)
+    return sigtest(anchor_acc, other_acc, anchor_method, method)
 
 def auc_sigtest(parapair_file, anchor_file, pp_score_file):
     with open(parapair_file, 'r') as pp:
@@ -112,7 +113,7 @@ def auc_sigtest(parapair_file, anchor_file, pp_score_file):
         anchor_auc.append(auc_score_a)
         _, _, auc_score_b = calculate_auc(true_parapair_dict, parapair_score_dict, page, parapair)
         other_auc.append(auc_score_b)
-    sigtest(anchor_auc, other_auc, anchor_method, method)
+    return sigtest(anchor_auc, other_auc, anchor_method, method)
 
 
 def main():
