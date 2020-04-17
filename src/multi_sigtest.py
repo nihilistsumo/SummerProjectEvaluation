@@ -9,9 +9,9 @@ def all_sigtest(parapair_file, anchor_file, pps_files, hq_file, num_cluster, lin
         cluster_sig_test_results.append(cluster_sigtest(parapair_file, anchor_file, f, hq_file, num_cluster, link))
     print('Anchor method\t\tOther method\t\tAUC ttest\t\tAUC p\t\tClust ttest\t\tClust p')
     for i in range(len(auc_sig_test_results)):
-        print(auc_sig_test_results[i]['anchor']+'\t\t'+auc_sig_test_results[i]['method']+'\t\t'
-              +str(auc_sig_test_results[i]['ttest'])+'\t\t'+str(auc_sig_test_results[i]['pval'])+'\t\t'
-              +str(cluster_sig_test_results[i]['ttest'])+'\t\t'+str(cluster_sig_test_results[i]['pval']))
+        print(auc_sig_test_results[i]['anchor']+'\t\t'+auc_sig_test_results[i]['method']+'\t\t%.4f\t\t%.4f\t\t%.4f\t\t%.4f' %
+              (auc_sig_test_results[i]['ttest'], auc_sig_test_results[i]['pval'], cluster_sig_test_results[i]['ttest'],
+               cluster_sig_test_results[i]['pval']))
 
 def main():
     parser = argparse.ArgumentParser(description='Sigtest on list of para scores based on anchor')
