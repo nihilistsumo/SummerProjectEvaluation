@@ -123,7 +123,7 @@ def main():
     parser.add_argument('-pps', '--parapair_scores', help='Path to parapair score files')
     parser.add_argument('-n', '--num_cluster', type=int, help='Number of clusters for each article')
     parser.add_argument('-l', '--linkage', help='Type of linkage (complete/average/single)')
-    parser.add_argument('-t', '--triples', help='Path to pagewise triples file')
+    #parser.add_argument('-t', '--triples', help='Path to pagewise triples file')
     args = vars(parser.parse_args())
     parapair_file = args['parapair']
     hq_file = args['hier_qrels']
@@ -131,12 +131,12 @@ def main():
     pp_score_file = args['parapair_scores']
     num_cluster = args['num_cluster']
     link = args['linkage']
-    triple_file = args['triples']
+    #triple_file = args['triples']
 
     print("Significance test on AUC\n========================")
     auc_sigtest(parapair_file, anchor_file, pp_score_file)
-    print("Significance test on Triples\n============================")
-    triple_sigtest(parapair_file, anchor_file, pp_score_file, triple_file)
+    #print("Significance test on Triples\n============================")
+    #triple_sigtest(parapair_file, anchor_file, pp_score_file, triple_file)
     print("Significance test on Clustering\n===============================")
     cluster_sigtest(parapair_file, anchor_file, pp_score_file, hq_file, num_cluster, link)
 
