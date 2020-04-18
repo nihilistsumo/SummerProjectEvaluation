@@ -43,7 +43,7 @@ def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels, print_pag
             cand_labels.append(cand_page_para_labels[page][para])
         pagewise_ari_score[page] = adjusted_rand_score(true_labels, cand_labels)
         if print_pagewise:
-            print(page+': '+str(pagewise_ari_score[page]))
+            print(page+': %.4f' % (pagewise_ari_score[page]))
     return pagewise_ari_score
 
 
