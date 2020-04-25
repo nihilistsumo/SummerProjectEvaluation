@@ -37,7 +37,7 @@ def sigtest(anchor_ari_scores, scores, anchor_method, method):
     print(anchor_method+'\t\t%.4f' % np.mean(anchor_ari_scores))
     print(method + '\t\t%.4f' % np.mean(scores))
     print("\nMethod1\t\tMethod2\t\tttest value\t\tp value")
-    t_test = ttest_ind(anchor_ari_scores, scores, equal_var=False)
+    t_test = ttest_rel(anchor_ari_scores, scores)
     print(anchor_method + '\t\t' + method + '\t\t%.4f\t\t%.4f' % (t_test[0], t_test[1]))
     return {'anchor': anchor_method, 'method': method, 'ttest': t_test[0], 'pval': t_test[1]}
 
