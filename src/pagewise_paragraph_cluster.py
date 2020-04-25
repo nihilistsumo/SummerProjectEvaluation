@@ -90,6 +90,9 @@ def pagewise_cluster(parapair_dict, norm_pair_dist, true_clusters, num_c=5, link
             print("See")
         if num_c == -1:
             true_num_cluster = max(true_clusters[page].values()) + 1
+            if len(paras) < true_num_cluster:
+                print(page+' has less paras than true num clusters')
+                true_num_cluster = len(paras)
             cl = AgglomerativeClustering(n_clusters=true_num_cluster, affinity='precomputed', linkage=link)
         else:
             cl = AgglomerativeClustering(n_clusters=num_c, affinity='precomputed', linkage=link)
