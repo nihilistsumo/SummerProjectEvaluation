@@ -63,7 +63,7 @@ def cluster_paras(paras, normalized_paired_dist, splitter):
     return np.array(dist_matrix)
 
 
-def pagewise_cluster(parapair_dict, norm_pair_dist, num_c=5, link='average'):
+def pagewise_cluster(parapair_dict, norm_pair_dist, true_clusters, num_c=5, link='average'):
     page_para_labels = dict()
     splitter = '_'
     for page in parapair_dict.keys():
@@ -88,7 +88,11 @@ def pagewise_cluster(parapair_dict, norm_pair_dist, num_c=5, link='average'):
         dist_mat = cluster_paras(paras, norm_pair_dist, splitter)
         if len(dist_mat) == 0:
             print("See")
-        cl = AgglomerativeClustering(n_clusters=num_c, affinity='precomputed', linkage=link)
+        if num_c == -1:
+            true_num_cluster = max(true_clusters[page].values()) + 1
+            cl = AgglomerativeClustering(n_clusters=true_num_cluster, affinity='precomputed', linkage=link)
+        else:
+            cl = AgglomerativeClustering(n_clusters=num_c, affinity='precomputed', linkage=link)
         # cl = OPTICS(min_samples=4, metric='precomputed')
         # cl = DBSCAN(eps=0.001, min_samples=2, metric='precomputed')
         cl_labels = cl.fit_predict(dist_mat)
@@ -173,7 +177,7 @@ def main():
 
         combine_parapair_scores.minmax_normalize_ppscore_dict(parapair_score)
         link = args['linkage']
-        page_para_labels, splitter = pagewise_cluster(parapair, parapair_score, num_cluster, link)
+        page_para_labels, splitter = pagewise_cluster(parapair, parapair_score, true_page_para_labels, num_cluster, link)
 
         pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels, print_pagewise)
 
