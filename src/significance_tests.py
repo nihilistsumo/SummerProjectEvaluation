@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import adjusted_rand_score
-from scipy.stats import ttest_rel
+from scipy.stats import ttest_rel, ttest_ind
 from pagewise_paragraph_cluster import convert_qrels_to_labels, pagewise_cluster
 from combine_parapair_scores import minmax_normalize_ppscore_dict
 from eval_pagewise_triple_ppscore import get_accuracy_triples
@@ -37,7 +37,7 @@ def sigtest(anchor_ari_scores, scores, anchor_method, method):
     print(anchor_method+'\t\t%.4f' % np.mean(anchor_ari_scores))
     print(method + '\t\t%.4f' % np.mean(scores))
     print("\nMethod1\t\tMethod2\t\tttest value\t\tp value")
-    t_test = ttest_rel(anchor_ari_scores, scores)
+    t_test = ttest_ind(anchor_ari_scores, scores, equal_var=False)
     print(anchor_method + '\t\t' + method + '\t\t%.4f\t\t%.4f' % (t_test[0], t_test[1]))
     return {'anchor': anchor_method, 'method': method, 'ttest': t_test[0], 'pval': t_test[1]}
 
