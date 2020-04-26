@@ -61,7 +61,7 @@ def cluster_sigtest(parapair_file, anchor_file, pp_score_file, hq_file, num_clus
     page_para_labels_anchor, splitter = pagewise_cluster(parapair, anchor_scores, true_page_para_labels, num_cluster, link)
     anchor_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels_anchor, pages)
 
-    page_para_labels, splitter = pagewise_cluster(parapair, parapair_scores, num_cluster, link)
+    page_para_labels, splitter = pagewise_cluster(parapair, parapair_scores, true_page_para_labels, num_cluster, link)
     other_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels, pages)
 
     return sigtest(anchor_ari, other_ari, anchor_method, method)
