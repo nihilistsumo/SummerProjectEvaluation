@@ -33,8 +33,12 @@ def convert_qrels_to_labels(hier_qrels_file):
     return hq_qrels
 
 
-def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels, print_pagewise):
+def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels, print_pagewise, page_minmax):
     pagewise_ari_score = dict()
+    minpage = ''
+    maxpage = ''
+    minscore = 1.0
+    maxscore = 0.0
     for page in cand_page_para_labels.keys():
         true_labels = []
         cand_labels = []
@@ -44,6 +48,16 @@ def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels, print_pag
         pagewise_ari_score[page] = adjusted_rand_score(true_labels, cand_labels)
         if print_pagewise:
             print(page+': %.4f' % (pagewise_ari_score[page]))
+        if page_minmax:
+            if pagewise_ari_score[page] < minscore:
+                minscore = pagewise_ari_score[page]
+                minpage = page
+            if pagewise_ari_score[page] > maxscore:
+                maxscore = pagewise_ari_score[page]
+                maxpage = page
+    if page_minmax:
+        print('Worst page: '+minpage+', ARI: '+str(minscore))
+        print('Best page: '+maxpage+', ARI: '+str(maxscore))
     return pagewise_ari_score
 
 
@@ -156,12 +170,14 @@ def main():
     parser.add_argument('-n', '--num_cluster', type=int, help='Number of clusters for each article')
     parser.add_argument('-l', '--linkage', help='Type of linkage (complete/average/single)')
     parser.add_argument('-vi', '--pagewise', action='store_true', help='Print pagewise scores')
+    parser.add_argument('-pmm', '--page_minmax', action='store_true', help='Print min and max performed pages for each method')
     args = vars(parser.parse_args())
     parapair_file = args['parapair']
     hq_file = args['hier_qrels']
     pp_score_files = args['parapair_scores']
     num_cluster = args['num_cluster']
     print_pagewise = args['pagewise']
+    page_minmax = args['page_minmax']
     with open(parapair_file, 'r') as pp:
         parapair = json.load(pp)
     methods = []
@@ -182,7 +198,7 @@ def main():
         link = args['linkage']
         page_para_labels, splitter = pagewise_cluster(parapair, parapair_score, true_page_para_labels, num_cluster, link)
 
-        pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels, print_pagewise)
+        pagewise_ari = compute_pagewise_ari(true_page_para_labels, page_para_labels, print_pagewise, page_minmax)
 
         # for p in pagewise_ari.keys():
             # print(p + '\t\t%.4f' % pagewise_ari[p])
