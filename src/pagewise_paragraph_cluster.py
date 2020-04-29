@@ -56,8 +56,7 @@ def compute_pagewise_ari(true_page_para_labels, cand_page_para_labels, print_pag
                 maxscore = pagewise_ari_score[page]
                 maxpage = page
     if page_minmax:
-        print('Worst page: '+minpage+', ARI: '+str(minscore))
-        print('Best page: '+maxpage+', ARI: '+str(maxscore))
+        print('Worst page: '+minpage+'\tBest page: '+maxpage)
     return pagewise_ari_score
 
 
