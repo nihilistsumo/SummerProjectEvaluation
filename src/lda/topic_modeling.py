@@ -23,16 +23,18 @@ from nltk.corpus import stopwords
 #     token_dict.save(out_dict_file)
 #     corpora.MmCorpus.serialize(out_corpus_file, corpus)
 
-def train_lda(corpus, token_dict, num_topics, update, passes):
-    return ldamodel.LdaModel(corpus=corpus, id2word=token_dict, num_topics=num_topics, update_every=update, passes=passes)
+def train_lda(corpus, token_dict, num_topics, update, passes, csize):
+    return ldamodel.LdaModel(corpus=corpus, id2word=token_dict, num_topics=num_topics, update_every=update,
+                             passes=passes, chunksize=csize)
 
 def main():
     parser = argparse.ArgumentParser(description='Cluster pagewise paras based on parapair score file')
-    parser.add_argument('-c', '--train_corpus', help='Path to train corpus')
-    parser.add_argument('-t', '--token_dict', help='Path to train token dictionary')
+    parser.add_argument('-tc', '--train_corpus', help='Path to train corpus')
+    parser.add_argument('-td', '--token_dict', help='Path to train token dictionary')
     parser.add_argument('-n', '--num_topics', type=int, help='Number of topics')
     parser.add_argument('-u', '--update', type=int, help='Update freq')
     parser.add_argument('-p', '--passes', type=int, help='No. of passes')
+    parser.add_argument('-c', '--chunk_size', type=int, help='No. of docs per step')
     parser.add_argument('-op', '--out', help='Path to LDA model output file')
     args = vars(parser.parse_args())
     train_corpus_file = args['train_corpus']
@@ -40,11 +42,12 @@ def main():
     num_t = args['num_topics']
     u = args['update']
     p = args['passes']
+    ch = args['chunk_size']
     outfile = args['out']
 
     c = corpora.MmCorpus(train_corpus_file)
     d = corpora.Dictionary.load(token_dict_file)
-    model = train_lda(c, d, num_t, u, p)
+    model = train_lda(c, d, num_t, u, p, ch)
     model.save(outfile)
 
 if __name__ == '__main__':
