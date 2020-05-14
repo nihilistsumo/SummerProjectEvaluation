@@ -34,10 +34,17 @@ def preprocess(para_text_dict, out_token, out_corpus):
     #texts = [[t for t in doc if frequency[t] > 1] for doc in pre_docs]
     print('\nDone')
     token_dict = corpora.Dictionary(texts)
-    corpus = [token_dict.doc2bow(text) for text in texts]
+    print('Token dict formed')
+    corpus = []
+    c = 0
+    for text in texts:
+        corpus.append(token_dict.doc2bow(text))
+        c += 1
+        if c % 1000 == 0:
+            print('\rDocument processed: ' + str(c), end='')
+    #corpus = [token_dict.doc2bow(text) for text in texts]
     token_dict.save(out_token)
     corpora.MmCorpus.serialize(out_corpus, corpus)
-    return texts, paraids
 
 def main():
     parser = argparse.ArgumentParser(description='Preprocess training corpus')
