@@ -4,12 +4,13 @@ from nltk.corpus import stopwords
 from collections import defaultdict
 from gensim import corpora
 from gensim.models import ldamodel
+from gensim.parsing.preprocessing import remove_stopwords
 
 def preprocess(para_text_dict):
     stops = stopwords.words('english')
     paraids = list(para_text_dict.keys())
     raw_docs = [para_text_dict[k] for k in paraids]
-    pre_docs = [[word for word in doc.lower().split() if word not in stops] for doc in raw_docs]
+    pre_docs = [remove_stopwords(doc) for doc in raw_docs]
     frequency = defaultdict(int)
     for d in pre_docs:
         for t in d:
