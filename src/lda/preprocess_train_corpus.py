@@ -18,7 +18,7 @@ def preprocess(para_text_dict, out_token, out_corpus):
             frequency[t] += 1
         c += 1
         if c%1000 == 0:
-            print('\rDocument processed: '+str(c))
+            print('\rDocument processed: '+str(c), end='')
     print('\nDone')
     c = 0
     texts = []
@@ -30,7 +30,7 @@ def preprocess(para_text_dict, out_token, out_corpus):
         texts.append(d)
         c += 1
         if c % 1000 == 0:
-            print('\rDocument processed: ' + str(c))
+            print('\rDocument processed: ' + str(c), end='')
     #texts = [[t for t in doc if frequency[t] > 1] for doc in pre_docs]
     print('\nDone')
     token_dict = corpora.Dictionary(texts)
